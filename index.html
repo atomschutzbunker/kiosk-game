@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>КИОСК - Filoloji Terminali PRO</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+
+        <div id="intro-screen" class="fullscreen-overlay">
+            <button id="play-intro-btn" onclick="startIntro()">▶ Oyunu Başlat</button>
+            <video id="intro-video" src="assets/intro.mp4" playsinline></video>
+            <button id="skip-btn" onclick="skipIntro()">⏭ İntroyu Atla</button>
+        </div>
+
+        <div id="start-screen" class="fullscreen-overlay hidden">
+            <div class="start-box">
+                <h2>КИОСК</h2>
+                <p class="welcome-text">Duy, çöz, söyle, sat.</p>
+                <p class="story-text">
+                    Cansu, Rusçayı kitaplardan değil gerçek karşılaşmalardan öğrenmek için bir kiosk açar.
+                    Turistler gelir, Rusça konuşur; sen duyduğunu Latin/Türkçe fonetikle çözerek doğru ürünü vermeye çalışırsın.
+                    Kiril bilmek zorunda değilsin. Ama kulağın çalışmak zorunda.
+                </p>
+
+                <div class="pedagogy-box">
+                    <div><b>Pedagojik Döngü:</b> Dinleme → Sesleri ayırt etme → Anlam çıkarma → Ürün seçme → Tekrarla pekiştirme</div>
+                    <div><b>Padej Avı:</b> Her siparişte “neden değişti?” sorusuyla Rusça hâlleri mikro durumlara bağlar.</div>
+                </div>
+
+                <div class="mode-grid">
+                    <button class="mode-btn easy" onclick="startGame('easy')">
+                        🍼 KOLAY MOD
+                        <small>
+                            Bebek mantığı: sesi duy, fonetik yaz, ipucu al.
+                            Uzun süre, daha toleranslı çözümleme.
+                        </small>
+                    </button>
+
+                    <button class="mode-btn medium" onclick="startGame('medium')">
+                        🎧 ORTA MOD
+                        <small>
+                            Siparişi duy, ana kelimeyi yakala, terminalden çöz.
+                            Standart süre ve normal ipuçları.
+                        </small>
+                    </button>
+
+                    <button class="mode-btn hard" onclick="startGame('hard')">
+                        🔥 ZOR MOD
+                        <small>
+                            Daha kısa süre, daha az ipucu, daha fazla tekrar.
+                            Kiril yok; kulak ve refleks var.
+                        </small>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="sound-controls">
+            <img src="assets/sound-on.png" id="icon-sound-on" class="sound-icon" onclick="toggleMute()" alt="Sesi Aç">
+            <img src="assets/mute.png" id="icon-sound-off" class="sound-icon hidden" onclick="toggleMute()" alt="Sesi Kapat">
+        </div>
+
+        <button id="replay-btn" onclick="replayAudio()">🔊 Tekrar Dinle</button>
+        <button id="menu-btn" onclick="returnToMenu()">🚪 Ana Menü</button>
+
+        <div id="hud-panel">
+            <div id="mode-badge">MOD: -</div>
+            <div id="xp-container">XP: 0</div>
+            <div id="case-hunt-hud">Padej Avı: -</div>
+        </div>
+
+        <div id="lives-container">❤️❤️❤️</div>
+
+        <audio id="bg-music" src="assets/audio/bgm.mp3" loop></audio>
+        <audio id="cash-sound" src="assets/audio/cash-register-sound.mp3"></audio>
+
+        <div id="anxiety-bar-container">
+            <div id="anxiety-bar"></div>
+        </div>
+
+        <div id="scene">
+            <div id="action-hint" class="hidden"></div>
+
+            <img src="assets/background.png" id="bg-layer" class="layer base-stretch" alt="Arka Plan">
+
+            <div id="night-overlay" class="layer base-stretch hidden"></div>
+
+            <img src="" id="tourist-layer" class="layer tourist-scale" alt="Turist">
+            <img src="assets/kiosk.png" id="kiosk-layer" class="layer base-stretch" alt="Kiosk">
+
+            <img src="assets/open-cash-register.png" id="open-register-layer" class="layer hidden" alt="Açık Kasa">
+
+            <div id="items-container"></div>
+
+            <img src="assets/hands.png" id="hands-layer" class="layer" alt="Eller">
+
+            <div id="phone-click-area" onclick="togglePhone()" title="Telefonu aç"></div>
+
+            <img src="assets/money.png" id="money-layer" class="layer hidden" alt="Para">
+
+            <div id="speech-bubble" class="hidden"></div>
+            <div id="player-speech-bubble" class="hidden"></div>
+
+            <div id="fail-overlay" class="fullscreen-overlay result-overlay hidden">
+                <img src="assets/fail.png" alt="HATA!">
+            </div>
+
+            <div id="success-overlay" class="fullscreen-overlay result-overlay hidden">
+                <img src="assets/success.png" alt="BAŞARILI!">
+            </div>
+
+            <div id="feedback-modal" class="fullscreen-overlay hidden">
+                <div class="feedback-box">
+                    <h3>❌ HATA RAPORU</h3>
+                    <p id="feedback-text"></p>
+                    <button class="feedback-btn" onclick="closeFeedbackAndFail()">Devam Et</button>
+                </div>
+            </div>
+
+            <div id="shift-report-screen" class="fullscreen-overlay hidden">
+                <div class="shift-report-box">
+                    <h3>📋 VARDİYA SONU KARNESİ</h3>
+
+                    <div class="report-grid">
+                        <div>
+                            <span class="report-label">Müşteri</span>
+                            <b id="report-customers">0</b>
+                        </div>
+                        <div>
+                            <span class="report-label">Doğru Satış</span>
+                            <b id="report-correct">0</b>
+                        </div>
+                        <div>
+                            <span class="report-label">Kazanılan XP</span>
+                            <b id="report-xp">0</b>
+                        </div>
+                        <div>
+                            <span class="report-label">Keşfedilen Padej</span>
+                            <b id="report-case-count">0</b>
+                        </div>
+                    </div>
+
+                    <div class="report-section">
+                        <h4>✅ Öğrenilen Kelimeler</h4>
+                        <div id="report-learned-words" class="report-list">Henüz yok.</div>
+                    </div>
+
+                    <div class="report-section">
+                        <h4>🔁 Tekrar Edilecekler</h4>
+                        <div id="report-weak-words" class="report-list">Henüz yok.</div>
+                    </div>
+
+                    <div class="report-section">
+                        <h4>🎯 Bugünün Padej Notu</h4>
+                        <div id="report-case-note" class="report-note">Henüz padej keşfi yok.</div>
+                    </div>
+
+                    <div class="report-actions">
+                        <button class="feedback-btn" onclick="continueAfterShiftReport()">Vardiyaya Devam Et</button>
+                        <button class="feedback-btn secondary" onclick="returnToMenu()">Ana Menü</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="game-over-screen" class="fullscreen-overlay hidden">
+                <img src="assets/game-over.png" class="go-img" alt="GAME OVER">
+                <img src="assets/retry.png" class="retry-img" onclick="restartGame()" alt="YENİDEN BAŞLA">
+            </div>
+        </div>
+
+        <div id="phone-modal" class="hidden">
+            <div class="modal-header">
+                <span>FİLOLOJİ TERMİNALİ</span>
+                <button onclick="togglePhone()" class="close-btn">X</button>
+            </div>
+
+            <div class="phone-tabs">
+                <button class="phone-tab active" data-tab="terminal" onclick="switchTab('terminal')">⌨ Terminal</button>
+                <button class="phone-tab" data-tab="mini-dictionary" onclick="switchTab('mini-dictionary')">📘 Mini Sözlük</button>
+                <button class="phone-tab" data-tab="notes" onclick="switchTab('notes')">📝 Not Defteri</button>
+                <button class="phone-tab" data-tab="learned" onclick="switchTab('learned')">🧠 Öğrenilenler</button>
+                <button class="phone-tab" data-tab="achievements" onclick="switchTab('achievements')">🏆 Başarımlar</button>
+            </div>
+
+            <div class="terminal-content">
+
+                <div id="screen-terminal" class="phone-screen">
+                    <div class="screen-info">
+                        Duyduğunu Kiril ile değil, kulağına geldiği gibi yaz:
+                        <b>mojno mne odin çay</b>, <b>ya hoçu vodu</b>, <b>dayte kofe</b> gibi.
+                    </div>
+
+                    <input
+                        type="text"
+                        id="phone-input"
+                        placeholder="Duyduğunu yaz..."
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+
+                    <div id="phone-output">
+                        Terminal dinlemede...
+                    </div>
+
+                    <div id="case-hunt-panel" class="hidden">
+                        <div class="case-hunt-title">🎯 Padej Avı</div>
+                        <div id="case-hunt-content"></div>
+                    </div>
+
+                    <div id="culture-note-panel" class="hidden">
+                        <div class="culture-note-title">🌍 Kültür Notu</div>
+                        <div id="culture-note-content"></div>
+                    </div>
+
+                    <div id="reply-container"></div>
+                </div>
+
+                <div id="screen-mini-dictionary" class="phone-screen hidden">
+                    <div class="screen-title">📘 Mini Sözlük</div>
+                    <div class="screen-info">
+                        Bu sekme mevcut siparişteki kelimeleri hızlıca gösterir.
+                        Üst üste 3 doğru çözdüğün kelimeler “Öğrenilenler”e taşınır.
+                    </div>
+                    <div id="mini-dictionary-output" class="phone-list">
+                        Henüz bir sipariş çözülmedi.
+                    </div>
+                </div>
+
+                <div id="screen-notes" class="phone-screen hidden">
+                    <div class="screen-title">📝 Not Defteri</div>
+                    <div class="screen-info">
+                        Kendi çağrışımlarını yaz. Örn: <b>pajalusta = pala dayı lütfen</b>.
+                    </div>
+                    <textarea id="notes-input" placeholder="Kendi notlarını yaz..."></textarea>
+                    <button class="phone-action-btn" onclick="saveNotes()">Notları Kaydet</button>
+                    <div id="notes-status">Notlar tarayıcıda saklanır.</div>
+                </div>
+
+                <div id="screen-learned" class="phone-screen hidden">
+                    <div class="screen-title">🧠 Sözlüğüm / Öğrenilenler</div>
+                    <div class="screen-info">
+                        Aynı kelimeyi üst üste 3 kez doğru çözdüğünde burada görünür.
+                    </div>
+
+                    <h4>Sözlüğüm</h4>
+                    <div id="learned-words-output" class="phone-list">
+                        Henüz öğrenilmiş kelime yok.
+                    </div>
+
+                    <h4>Padej Keşifleri</h4>
+                    <div id="case-discovery-output" class="phone-list">
+                        Henüz padej keşfi yok.
+                    </div>
+                </div>
+
+                <div id="screen-achievements" class="phone-screen hidden">
+                    <div class="screen-title">🏆 Başarımlar</div>
+                    <div class="screen-info">
+                        Satış, dinleme, padej avı ve hızlı çözme başarımları burada birikir.
+                    </div>
+                    <div id="achievement-list" class="phone-list">
+                        Henüz başarım yok.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="achievement-popup">
+            <span style="font-size: 28px;">🏆</span>
+            <div>
+                <div style="font-size: 10px; opacity: 0.8;">BAŞARIM KİLİDİ AÇILDI</div>
+                <div id="achievement-text">Başarım Adı</div>
+            </div>
+        </div>
+
+        <div id="case-popup">
+            <span style="font-size: 28px;">🎯</span>
+            <div>
+                <div style="font-size: 10px; opacity: 0.8;">PADEJ KEŞFEDİLDİ</div>
+                <div id="case-popup-text">Padej Adı</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

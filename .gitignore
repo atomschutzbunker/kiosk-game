@@ -1,0 +1,41 @@
+# Sistem dosyaları
+.DS_Store
+Thumbs.db
+
+# Log dosyaları
+*.log
+
+# Geçici dosyalar
+tmp/
+temp/
+.cache/
+
+# Yedek / sıkıştırılmış dosyalar
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# Eski / deneme klasörleri
+backup/
+backups/
+old/
+eski/
+deneme/
+
+# Editör ayarları
+.vscode/
+.idea/
+
+# Node kullanırsan
+node_modules/
+
+# Gizli ayar dosyaları
+.env
+.env.local
+
+# Gereksiz dosyalar
+client-speech-bubble.png
+seller-speech-bubble.png
+start.png
